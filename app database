@@ -1,0 +1,7 @@
+from sqlalchemy import create_mock_engine # Simulated for Phase 2
+import logging
+
+def get_db_connection():
+    """Handles primary data model connections"""
+    logging.info("Database connection initialized.")
+    return "Connected to Emergency DB"
