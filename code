@@ -1,0 +1,68 @@
+import pandas as pd
+import numpy as np
+from sklearn.ensemble import RandomForestRegressor
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel, Field, validator
+import uvicorn
+import nest_asyncio
+import threading
+
+# --- 1. DATA SCHEMAS (models/schemas.py) ---
+# Goal: Security Audit & Validation
+class PredictionRequest(BaseModel):
+    hour: int = Field(..., ge=0, le=23)
+    day: int = Field(..., ge=0, le=6)
+    weather: int = Field(..., ge=0, le=2) # 0:Clear, 1:Rain, 2:Storm
+    is_festival: int = Field(..., ge=0, le=1)
+
+    @validator('hour')
+    def check_integrity(cls, v):
+        if not isinstance(v, int):
+            raise ValueError('Security Error: Malformed Data Type detected.')
+        return v
+
+# --- 2. ML ENGINE (app/engine.py) ---
+# Goal: ML Pipeline & Logic Expansion
+class EmergencyEngine:
+    def __init__(self):
+        self.model = RandomForestRegressor(n_estimators=100)
+        self.threshold = 12.0 # Real-time threshold logic
+        self._initialize_foundation()
+
+    def _initialize_foundation(self):
+        """Simulates historical logs and seasonal patterns"""
+        X = np.random.randint(0, 5, size=(100, 4))
+        y = np.random.randint(5, 20, size=100)
+        self.model.fit(X, y)
+
+    def predict_load(self, data: PredictionRequest):
+        input_feat = [[data.hour, data.day, data.weather, data.is_festival]]
+        prediction = self.model.predict(input_feat)[0]
+        is_critical = prediction > self.threshold
+        
+        return {
+            "load_density": round(prediction, 2),
+            "alert_status": "CRITICAL" if is_critical else "STABLE",
+            "action_plan": "Mobilize extra ambulances" if is_critical else "Standard staff"
+        }
+
+# --- 3. THE API (app/main.py) ---
+# Goal: Production-ready FastAPI Backend
+app = FastAPI(title="AI Emergency System v3")
+engine = EmergencyEngine()
+
+@app.post("/api/v1/predict")
+async def secure_prediction(payload: PredictionRequest):
+    try:
+        # Task: Final Polish & Better Error Messages
+        result = engine.predict_load(payload)
+        return {"status": "success", "response": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="System integrity error.")
+
+# --- 4. EXECUTION FOR COLAB ---
+def run_app():
+    nest_asyncio.apply()
+    uvicorn.run(app, host="127.0.0.1", port=8000)
+
+threading.Thread(target=run_app, daemon=True).start()
