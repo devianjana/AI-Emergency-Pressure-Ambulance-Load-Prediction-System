@@ -1,0 +1,40 @@
+import pandas as pd
+import numpy as np
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.cluster import DBSCAN
+from app.config import ALERT_THRESHOLD
+
+class EmergencyEngine:
+    def __init__(self):
+        self.model = RandomForestRegressor(n_estimators=100)
+        self.is_trained = False
+
+    def train_model(self):
+        """Task: Implement primary data models with time-series/seasonal logic"""
+        data = {
+            'hour': np.random.randint(0, 24, 1000),
+            'day_of_week': np.random.randint(0, 7, 1000),
+            'weather_score': np.random.randint(0, 3, 1000),
+            'festival_spike': np.random.choice([0, 1], 1000, p=[0.9, 0.1]),
+            'ambulance_load': np.random.randint(1, 30, 1000)
+        }
+        df = pd.DataFrame(data)
+        # Apply logic for seasonal spikes
+        df.loc[df['festival_spike'] == 1, 'ambulance_load'] += 10
+        self.model.fit(df[['hour', 'day_of_week', 'weather_score', 'festival_spike']], df['ambulance_load'])
+        self.is_trained = True
+
+    def get_prediction(self, features):
+        """API-consumable logic with real-time alert threshold"""
+        prediction = self.model.predict([features])[0]
+        alert = bool(prediction > ALERT_THRESHOLD)
+        return {
+            "predicted_load": round(prediction, 2),
+            "alert_status": "CRITICAL" if alert else "STABLE",
+            "trigger_alert": alert
+        }
+
+    def detect_hotspots(self, coords):
+        """Task: Identify accident-prone hotspots (Geospatial Modeling)"""
+        db = DBSCAN(eps=0.001, min_samples=5).fit(coords)
+        return len(set(db.labels_)) - (1 if -1 in db.labels_ else 0)
