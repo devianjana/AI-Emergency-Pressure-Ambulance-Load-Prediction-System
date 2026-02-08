@@ -1,0 +1,12 @@
+import requests
+import json
+
+# Test Case: Weekend Night (22), Rain (1), Festival (1)
+test_payload = {"hour": 22, "day": 5, "weather": 1, "is_festival": 1}
+
+try:
+    response = requests.post("http://127.0.0.1:8000/api/v1/predict", json=test_payload)
+    print("--- Phase 3 Submission Test ---")
+    print(json.dumps(response.json(), indent=4))
+except Exception as e:
+    print(f"Server is starting, please wait 5 seconds and try again.")
