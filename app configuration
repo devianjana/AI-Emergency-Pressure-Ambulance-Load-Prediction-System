@@ -1,0 +1,4 @@
+# Configuration for Phase 2: Logic & Expansion
+ALERT_THRESHOLD = 15.0  # Threshold to trigger "CRITICAL" status
+DATABASE_URI = 'sqlite:///emergency_system.db'
+CITY_ZONES = ["North", "South", "East", "West"]
