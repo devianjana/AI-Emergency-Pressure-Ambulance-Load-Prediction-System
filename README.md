@@ -1,42 +1,58 @@
 # AI-Emergency-Pressure-Ambulance-Load-Prediction-System
-This system is an AI-driven solution designed to predict Emergency Department (ED) overloads and ambulance arrival density. By analyzing historical accident data, seasonal patterns, and weather conditions, the system provides actionable early alerts to optimize hospital resource allocation and reduce chaos.
+
 1. Project Objective
 
-Build an AI-driven system to:
+This system was built to provide a scalable, AI-driven solution for hospitals to:
 
-Predict Emergency Department (ED) overloads
+Predict Emergency Department (ED) overloads before they occur.
 
-Forecast ambulance arrival density
+Identify accident-prone hotspots using geospatial clustering.
 
-Identify accident-prone zones
+Trigger early alerts based on real-time thresholds for better resource allocation
 
-Detect seasonal/festival spikes
+2. Technology Stack
 
-Trigger early alerts for operational preparedness
+Consistent with the required industry standards:
 
-3. Technology Stack
+Backend API: Python + FastAPI (for high-performance asynchronous requests).
 
-Backend API: Python + Flask / FastAPI
+ML Pipeline: Python + Scikit-learn (Random Forest Regressor for time-series patterns).
 
-ML Pipeline: Python + Scikit-learn (Random Forest & DBSCAN)
+Validation: Pydantic (for strict data type enforcement and security auditing).
 
-Data Handling: Pandas & NumPy
+Geospatial: Scikit-learn DBSCAN (for hotspot detection).
 
-Validation: Pydantic / Input Validation Logic
+3. System Architecture
 
-Geospatial: Clustering for city-level hotspot detection
+The system follows a Strict Isolation model to ensure modularity and scalability:
 
-4. Modular Architecture
-The project follows a Strict Isolation principle to ensure scalability:
+Data Ingestion: Processes historical logs, weather, and seasonal data.
 
-ML Prediction Engine: Isolated logic for time-series forecasting and geospatial modeling.
+Database Layer: Clean schema design for storing incident reports and predictions.
 
-REST API Backend: Consumable endpoints that support real-time threshold monitoring.
+ML Prediction Engine: Processes features through a trained Random Forest model.
 
-Alert System: Business logic that triggers critical notifications based on predicted pressure.
+Alert Engine: Monitors if predictions cross the established "Critical" threshold.
 
-4. Project Folder Structure (Industry Standard)
-   
+REST API: Serves JSON responses to the frontend or hospital dashboards.
+
+4. Phase 3 Design Decisions & Security Audit
+
+As per the Phase 3: Completion requirements:
+
+Security & Integrity
+Data Sanitization: Implemented Pydantic schemas to audit incoming requests. This prevents malformed data or injection attempts from crashing the prediction engine.
+
+Error Handling: Replaced generic errors with specific, descriptive messages that guide the user without exposing system internals.
+
+User Experience (UX)
+Actionable Intelligence: The API doesn't just return a number; it provides an "Action Plan" (e.g., "Mobilize extra ambulances") to assist decision-makers immediately.
+
+Real-time Status: Included alert levels (STABLE/CRITICAL) to allow for instant visual recognition on dashboards.
+
+5. Folder Structure (Industry Standard)
+
+The project is organized as follows to ensure it is deployment-ready:
 
 project_root/
 
@@ -44,21 +60,18 @@ project_root/
 
 ├── app/
 
-│   ├── main.py          # API Entry point & Routes
+│   ├── main.py          # FastAPI application & routes
 
-│   ├── config.py        # System configurations & thresholds
+│   ├── engine.py        # ML Model & Prediction logic
 
-│   ├── database.py      # Database connections (Phase 2 Expansion)
+│   ├── database.py      # SQLAlchemy connections
 
-│   └── models/          
+│   └── models/
 
-│       └── engine.py    # Core ML Prediction & Geospatial Logic
+│       ├── schemas.py   # Pydantic validation models
 
-├── data/                # Historical datasets (CSV/SQL)
-
-├── tests/               # Validation & edge-case testing
+│       └── accident.py  # Database entities
 
 ├── requirements.txt     # Dependency list
 
-└── README.md            # Project documentation
-
+└── README.md            # This documentation
