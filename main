@@ -1,0 +1,23 @@
+from flask import Flask, request, jsonify
+from app.models.engine import EmergencyEngine
+
+app = Flask(__name__)
+engine = EmergencyEngine()
+engine.train_model()
+
+@app.route('/api/v1/predict', methods=['POST'])
+def predict():
+    """Endpoint for city-level deployment and early alerts"""
+    data = request.json
+    
+    # Task 2: Add necessary validations and edge-case handling
+    required = ['hour', 'day', 'weather', 'festival']
+    if not data or not all(k in data for k in required):
+        return jsonify({"status": "error", "message": "Missing input fields"}), 400
+    
+    features = [data['hour'], data['day'], data['weather'], data['festival']]
+    result = engine.get_prediction(features)
+    return jsonify({"status": "success", "data": result})
+
+if __name__ == "__main__":
+    app.run(host='0.0.0.0', port=5000)
