@@ -1,3 +1,5 @@
+# !pip install fastapi uvicorn nest_asyncio scikit-learn requests
+
 import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestRegressor
@@ -6,63 +8,116 @@ from pydantic import BaseModel, Field, validator
 import uvicorn
 import nest_asyncio
 import threading
+import time
+import requests
+import json
 
-# --- 1. DATA SCHEMAS (models/schemas.py) ---
-# Goal: Security Audit & Validation
+# --------------------------------
+# 1. DATA SCHEMA
+# --------------------------------
 class PredictionRequest(BaseModel):
     hour: int = Field(..., ge=0, le=23)
     day: int = Field(..., ge=0, le=6)
-    weather: int = Field(..., ge=0, le=2) # 0:Clear, 1:Rain, 2:Storm
+    weather: int = Field(..., ge=0, le=2)  # 0:Clear, 1:Rain, 2:Storm
     is_festival: int = Field(..., ge=0, le=1)
 
     @validator('hour')
     def check_integrity(cls, v):
         if not isinstance(v, int):
-            raise ValueError('Security Error: Malformed Data Type detected.')
+            raise ValueError("Security Error: Malformed Data Type detected.")
         return v
 
-# --- 2. ML ENGINE (app/engine.py) ---
-# Goal: ML Pipeline & Logic Expansion
+
+# --------------------------------
+# 2. ML ENGINE
+# --------------------------------
 class EmergencyEngine:
     def __init__(self):
-        self.model = RandomForestRegressor(n_estimators=100)
-        self.threshold = 12.0 # Real-time threshold logic
+        self.model = RandomForestRegressor(n_estimators=100, random_state=42)
+        self.threshold = 12.0
         self._initialize_foundation()
 
     def _initialize_foundation(self):
-        """Simulates historical logs and seasonal patterns"""
-        X = np.random.randint(0, 5, size=(100, 4))
-        y = np.random.randint(5, 20, size=100)
+        """Simulated historical realistic data"""
+        hours = np.random.randint(0, 24, 200)
+        days = np.random.randint(0, 7, 200)
+        weather = np.random.randint(0, 3, 200)
+        festival = np.random.randint(0, 2, 200)
+
+        X = np.column_stack((hours, days, weather, festival))
+
+        # Simulated pattern logic
+        y = (
+            5
+            + hours * 0.3
+            + days * 0.5
+            + weather * 2
+            + festival * 3
+            + np.random.normal(0, 1, 200)
+        )
+
         self.model.fit(X, y)
 
     def predict_load(self, data: PredictionRequest):
         input_feat = [[data.hour, data.day, data.weather, data.is_festival]]
         prediction = self.model.predict(input_feat)[0]
         is_critical = prediction > self.threshold
-        
+
         return {
-            "load_density": round(prediction, 2),
+            "load_density": round(float(prediction), 2),
             "alert_status": "CRITICAL" if is_critical else "STABLE",
-            "action_plan": "Mobilize extra ambulances" if is_critical else "Standard staff"
+            "action_plan": "Mobilize extra ambulances"
+            if is_critical
+            else "Standard staff"
         }
 
-# --- 3. THE API (app/main.py) ---
-# Goal: Production-ready FastAPI Backend
+
+# --------------------------------
+# 3. FASTAPI APP
+# --------------------------------
 app = FastAPI(title="AI Emergency System v3")
 engine = EmergencyEngine()
 
 @app.post("/api/v1/predict")
 async def secure_prediction(payload: PredictionRequest):
     try:
-        # Task: Final Polish & Better Error Messages
         result = engine.predict_load(payload)
         return {"status": "success", "response": result}
-    except Exception as e:
+    except Exception:
         raise HTTPException(status_code=500, detail="System integrity error.")
 
-# --- 4. EXECUTION FOR COLAB ---
+
+# --------------------------------
+# 4. RUN SERVER (COLAB SAFE)
+# --------------------------------
 def run_app():
     nest_asyncio.apply()
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    uvicorn.run(app, host="127.0.0.1", port=8000, log_level="warning")
 
-threading.Thread(target=run_app, daemon=True).start()
+thread = threading.Thread(target=run_app, daemon=True)
+thread.start()
+
+# Wait for server to start
+time.sleep(5)
+
+# --------------------------------
+# 5. TEST REQUEST
+# --------------------------------
+test_payload = {
+    "hour": 22,
+    "day": 5,
+    "weather": 1,
+    "is_festival": 1
+}
+
+try:
+    response = requests.post(
+        "http://127.0.0.1:8000/api/v1/predict",
+        json=test_payload
+    )
+
+    print("\n--- Phase 3 Submission Test ---")
+    print(json.dumps(response.json(), indent=4))
+
+except Exception:
+    print("Server not ready yet. Try again.")
